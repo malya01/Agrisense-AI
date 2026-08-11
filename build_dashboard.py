@@ -1,14 +1,4 @@
-"""
-build_dashboard.py
--------------------
-Patches outputs/dashboard.html in place with the latest
-outputs/dashboard_data.json, so the HTML stays a single portable file
-you can double-click or email -- no local server, no fetch() needed.
 
-Run this AFTER export_dashboard_data.py.
-Usage (from inside src/):
-    python3 build_dashboard.py
-"""
 
 import re
 import json
@@ -20,7 +10,7 @@ DATA_PATH = "../outputs/dashboard_data.json"
 def build():
     with open(DATA_PATH) as f:
         data_json = f.read()
-        json.loads(data_json)  # sanity check it's valid JSON before writing
+        json.loads(data_json) 
 
     with open(HTML_PATH, encoding="utf-8") as f:
         html = f.read()
