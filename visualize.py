@@ -8,7 +8,6 @@ weekly = pd.read_csv("../data/weekly_with_rule_based_stress.csv")
 season = pd.read_csv("../data/season_features.csv")
 yield_df = pd.read_csv("../data/yield_data.csv")
 
-# ---------- 1. NDVI trajectories colored by true stress level ----------
 fig, ax = plt.subplots(figsize=(8, 5))
 colors = {0: "#2e8b57", 1: "#e6a817", 2: "#c0392b"}
 labels = {0: "Healthy", 1: "Mild stress", 2: "Severe stress"}
@@ -27,7 +26,7 @@ fig.tight_layout()
 fig.savefig("../outputs/1_ndvi_trajectories.png")
 plt.close(fig)
 
-# ---------- 2. Yield vs NDVI_mean scatter ----------
+
 fig, ax = plt.subplots(figsize=(7, 5))
 sc = ax.scatter(season["NDVI_mean"], season["yield_tonnes_per_ha"],
                  c=season["soil_moisture_mean"], cmap="YlGn", s=70, edgecolor="k")
@@ -39,7 +38,6 @@ fig.tight_layout()
 fig.savefig("../outputs/2_yield_vs_ndvi.png")
 plt.close(fig)
 
-# ---------- 3. Stress class distribution: rule-based vs ML-derived ground truth ----------
 fig, ax = plt.subplots(figsize=(6, 4.5))
 rule_counts = weekly["stress_rule_based"].value_counts().sort_index()
 ax.bar(["Healthy", "Mild", "Severe"], rule_counts.values, color=["#2e8b57", "#e6a817", "#c0392b"])
@@ -49,7 +47,7 @@ fig.tight_layout()
 fig.savefig("../outputs/3_stress_distribution.png")
 plt.close(fig)
 
-# ---------- 4. Model comparison bar chart ----------
+
 from yield_prediction import run as run_yield
 results, best_name, importances, _ = run_yield()
 
@@ -73,7 +71,7 @@ fig.tight_layout()
 fig.savefig("../outputs/4_model_comparison.png")
 plt.close(fig)
 
-# ---------- 5. Feature importance for best yield model ----------
+
 fig, ax = plt.subplots(figsize=(7, 5))
 importances.head(8).sort_values().plot(kind="barh", ax=ax, color="#55a868")
 ax.set_title(f"Top Feature Importances - {best_name} (Yield Model)")
