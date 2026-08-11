@@ -1,11 +1,4 @@
-"""
-yield_prediction.py
---------------------
-Module 3: Crop Yield Prediction.
-Trains both XGBoost and Random Forest regressors on the season-level
-fused feature table (satellite + weather + soil + IoT), compares them,
-and saves the better model.
-"""
+
 
 import pandas as pd
 import numpy as np
@@ -38,8 +31,6 @@ def run():
     X = df[FEATURE_COLS]
     y = df[TARGET_COL]
 
-    # Small dataset (40 plots) -> use K-fold CV for a more reliable estimate,
-    # plus one held-out split for a clean final report.
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
 
     results = {}
@@ -57,12 +48,10 @@ def run():
     xgb_pred = xgb.predict(X_test)
     results["XGBoost"] = evaluate(y_test, xgb_pred)
 
-    # 5-fold CV (R2) for robustness check given the small dataset
     kf = KFold(n_splits=5, shuffle=True, random_state=42)
     results["RandomForest"]["CV_R2_mean"] = cross_val_score(rf, X, y, cv=kf, scoring="r2").mean()
     results["XGBoost"]["CV_R2_mean"] = cross_val_score(xgb, X, y, cv=kf, scoring="r2").mean()
 
-    # pick winner by CV R2 (more reliable than single split on n=40)
     best_name = max(results, key=lambda k: results[k]["CV_R2_mean"])
     best_model = rf if best_name == "RandomForest" else xgb
     joblib.dump(best_model, "../models/yield_model_best.pkl")
