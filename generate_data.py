@@ -1,17 +1,4 @@
-"""
-generate_data.py
------------------
-Simulates the 5 real-world datasets for the project, using the SAME schema,
-units, and value ranges that the real APIs/datasets would return.
 
-WHY SIMULATED: This sandbox has no network access to Earth Engine, NASA POWER,
-SoilGrids, or Kaggle. In production, replace each generator function below
-with the real API call marked "REPLACE WITH REAL API".
-
-Scope chosen (per the plan): Wheat crop, Rabi season, 40 field plots across
-a district, one growing season with 12 weekly timesteps (~84 days, typical
-wheat cycle).
-"""
 
 import numpy as np
 import pandas as pd
@@ -22,35 +9,25 @@ N_PLOTS = 40
 N_WEEKS = 12
 PLOT_IDS = [f"PLOT_{i:03d}" for i in range(1, N_PLOTS + 1)]
 
-# Each plot gets a fixed lat/long inside a sample district bounding box
-# (e.g., a wheat belt district in Madhya Pradesh: ~22.7N, 75.8E)
 plot_coords = {
     pid: (22.5 + np.random.uniform(-0.3, 0.3), 75.6 + np.random.uniform(-0.3, 0.3))
     for pid in PLOT_IDS
 }
 
-# Each plot is randomly assigned a "true stress profile" that drives all
-# downstream signals consistently (so the dataset is internally coherent,
-# not just random noise) -> 0 = healthy, 1 = mild stress, 2 = severe stress
+
 plot_stress_profile = {
     pid: np.random.choice([0, 1, 2], p=[0.5, 0.3, 0.2]) for pid in PLOT_IDS
 }
 
 
 def generate_sentinel2_ndvi_ndre():
-    """
-    REPLACE WITH REAL API: Google Earth Engine Python API pulling
-    COPERNICUS/S2_SR_HARMONIZED, computing:
-        NDVI = (B8 - B4) / (B8 + B4)
-        NDRE = (B8 - B5) / (B8 + B5)
-    averaged over each plot polygon, once per week.
-    """
+   
     rows = []
     for pid in PLOT_IDS:
         stress = plot_stress_profile[pid]
-        # Healthy wheat NDVI arcs from ~0.3 (sowing) to ~0.85 (peak) back to ~0.4 (senescence)
+       
         base_curve = 0.3 + 0.55 * np.sin(np.linspace(0.1, np.pi - 0.1, N_WEEKS))
-        # stress lowers peak and causes earlier decline
+       
         penalty = stress * 0.12
         ndvi = base_curve - penalty + np.random.normal(0, 0.02, N_WEEKS)
         ndvi = np.clip(ndvi, 0.05, 0.92)
@@ -75,7 +52,7 @@ def generate_nasa_power_weather():
     rows = []
     for pid in PLOT_IDS:
         stress = plot_stress_profile[pid]
-        # stressed plots get a simulated dry/hot spell mid-season
+    
         base_temp = 22 + 6 * np.sin(np.linspace(0, np.pi, N_WEEKS)) + np.random.normal(0, 1, N_WEEKS)
         base_rain = np.random.gamma(2, 3, N_WEEKS)
         if stress >= 1:
@@ -96,12 +73,7 @@ def generate_nasa_power_weather():
 
 
 def generate_soilgrids():
-    """
-    REPLACE WITH REAL API: ISRIC SoilGrids REST API
-    https://rest.isric.org/soilgrids/v2.0/properties/query?lon=..&lat=..
-    Properties: phh2o, soc (organic carbon), nitrogen, cec, sand/silt/clay.
-    Soil properties are static for a season, so one row per plot.
-    """
+   
     rows = []
     for pid in PLOT_IDS:
         stress = plot_stress_profile[pid]
@@ -119,17 +91,13 @@ def generate_soilgrids():
 
 
 def generate_iot_sensors():
-    """
-    REPLACE WITH REAL SOURCE: Kaggle/UCI "Smart Agriculture IoT" dataset,
-    OR live sensor feed (soil moisture probes, DHT22 temp/humidity nodes)
-    ingested via MQTT -> a time-series DB. Weekly-averaged here.
-    """
+
     rows = []
     for pid in PLOT_IDS:
         stress = plot_stress_profile[pid]
         base_moisture = 45 - stress * 8 + np.random.normal(0, 3, N_WEEKS)
         if stress >= 1:
-            base_moisture[4:8] -= stress * 6  # dry spell matches weather module
+            base_moisture[4:8] -= stress * 6  
         soil_moisture = np.clip(base_moisture, 5, 65)
         soil_temp = np.clip(20 + np.random.normal(0, 2, N_WEEKS), 12, 32)
         for week in range(N_WEEKS):
@@ -142,12 +110,7 @@ def generate_iot_sensors():
 
 
 def generate_yield_data(ndvi_df, weather_df, soil_df, iot_df):
-    """
-    REPLACE WITH REAL SOURCE: India Crop Yield Dataset (data.gov.in / Kaggle),
-    typically district/season-wise actual reported yield (tonnes/hectare).
-    Here we derive a synthetic-but-physically-plausible yield from the other
-    modules so the ML pipeline has genuine signal to learn (not pure noise).
-    """
+   
     rows = []
     for pid in PLOT_IDS:
         stress = plot_stress_profile[pid]
@@ -156,7 +119,7 @@ def generate_yield_data(ndvi_df, weather_df, soil_df, iot_df):
         avg_moisture = iot_df[iot_df.plot_id == pid].soil_moisture_pct.mean()
         oc = soil_df[soil_df.plot_id == pid].organic_carbon_pct.values[0]
 
-        base_yield = 3.0  # tonnes/hectare, typical wheat baseline
+        base_yield = 3.0 
         yield_t_ha = (
             base_yield
             + 2.2 * (peak_ndvi - 0.5)
@@ -168,7 +131,7 @@ def generate_yield_data(ndvi_df, weather_df, soil_df, iot_df):
         )
         rows.append({
             "plot_id": pid,
-            "stress_level_true": stress,  # kept for validation, not used as a feature
+            "stress_level_true": stress,  
             "yield_tonnes_per_ha": round(max(yield_t_ha, 0.3), 3),
         })
     return pd.DataFrame(rows)
