@@ -1,9 +1,4 @@
-"""
-pipeline.py
------------
-End-to-end orchestration: runs Modules 1-4 in sequence.
-This is the single entry point you'd call from an API/scheduler in production.
-"""
+
 
 import subprocess
 import sys
