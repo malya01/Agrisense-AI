@@ -1,13 +1,4 @@
-"""
-advisory_system.py
--------------------
-Module 4: Smart Farmer Advisory System.
-Takes the outputs of Modules 2 & 3 (stress level, predicted yield) plus
-raw soil/weather/IoT readings, and produces plain-language recommendations.
-Deliberately rule-based (a decision layer, not another ML model) so every
-recommendation is explainable to a farmer/agronomist -- important for trust
-and adoption in real deployments.
-"""
+
 
 import pandas as pd
 
