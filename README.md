@@ -1,4 +1,4 @@
-Agrisense AI
+Agrisense AI-
  Multimodal AI Framework for Crop Stress Detection & Yield Prediction
 
 AI-based framework for early crop stress detection, yield prediction, and smart agricultural recommendations.
