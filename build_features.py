@@ -1,10 +1,4 @@
-"""
-build_features.py
-------------------
-Merges the 5 raw datasets into two feature tables:
-  1. weekly_features.csv   -> for time-series stress detection
-  2. season_features.csv   -> one row per plot, aggregated, for yield prediction
-"""
+
 
 import pandas as pd
 import numpy as np
@@ -17,18 +11,15 @@ def build():
     iot = pd.read_csv("../data/iot_sensors.csv")
     yield_df = pd.read_csv("../data/yield_data.csv")
 
-    # ---- weekly (time-series) table: NDVI/NDRE + weather + IoT joined on plot+week ----
+  
     weekly = ndvi.merge(weather, on=["plot_id", "week"]).merge(iot, on=["plot_id", "week"])
-    weekly = weekly.merge(soil, on="plot_id")  # soil is static, broadcast to every week
+    weekly = weekly.merge(soil, on="plot_id") 
     weekly = weekly.sort_values(["plot_id", "week"]).reset_index(drop=True)
 
-    # Rolling features that matter for stress detection
     weekly["NDVI_pct_change_2wk"] = weekly.groupby("plot_id")["NDVI"].pct_change(2)
     weekly["rainfall_7wk_cumsum"] = weekly.groupby("plot_id")["rainfall_mm"].cumsum()
 
     weekly.to_csv("../data/weekly_features.csv", index=False)
-
-    # ---- season-level table: one row per plot, for yield model ----
     season = weekly.groupby("plot_id").agg(
         NDVI_peak=("NDVI", "max"),
         NDVI_mean=("NDVI", "mean"),
