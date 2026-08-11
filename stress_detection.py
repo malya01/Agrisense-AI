@@ -1,17 +1,3 @@
-"""
-stress_detection.py
---------------------
-Module 2: Early Crop Stress Detection.
-
-Two approaches implemented (as recommended in the plan):
-  A. Rule-based flagging  -> fast, explainable, good MVP / early-warning trigger
-  B. ML classifier (Random Forest) -> learns non-obvious interactions between
-     NDVI trend, soil moisture, and weather.
-
-Both are evaluated against `stress_level_true` (0=healthy,1=mild,2=severe),
-which in a real deployment would come from either (a) agronomist field
-labels, or (b) historical yield-loss-derived labels.
-"""
 
 import pandas as pd
 import numpy as np
@@ -22,13 +8,7 @@ import joblib
 
 
 def rule_based_stress(row):
-    """
-    Simple, explainable thresholds an agronomist could sanity-check:
-      - NDVI dropping fast (>15% over 2 weeks) AND
-      - soil moisture below 30% AND
-      - rainfall in the recent window is low
-    -> flag severity based on how many conditions are triggered.
-    """
+   
     score = 0
     if pd.notna(row["NDVI_pct_change_2wk"]) and row["NDVI_pct_change_2wk"] < -0.15:
         score += 1
@@ -53,17 +33,11 @@ def run_rule_based(weekly_df):
 
 
 def run_ml_classifier(weekly_df):
-    """
-    Train a Random Forest to predict per-week stress level from
-    NDVI/NDRE + weather + IoT features. Ground truth here (for
-    demonstration) is derived from the same underlying plot stress
-    profile used to simulate the data -- in production this would be
-    replaced by field-verified labels.
-    """
+   
     weekly_df = weekly_df.copy()
     weekly_df["NDVI_pct_change_2wk"] = weekly_df["NDVI_pct_change_2wk"].fillna(0)
 
-    # attach ground truth per plot (season-level -> broadcast to weeks)
+  
     yield_df = pd.read_csv("../data/yield_data.csv")[["plot_id", "stress_level_true"]]
     weekly_df = weekly_df.merge(yield_df, on="plot_id")
 
