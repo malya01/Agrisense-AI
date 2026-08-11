@@ -1,14 +1,3 @@
-"""
-export_dashboard_data.py
--------------------------
-Run this AFTER the rest of the pipeline (generate_data -> build_features ->
-stress_detection -> yield_prediction -> advisory_system). It reads the CSVs
-those steps already write to ../data and ../outputs, and produces a single
-dashboard_data.json that the dashboard reads.
-
-Usage (from inside src/):
-    python3 export_dashboard_data.py
-"""
 
 import pandas as pd
 import json
@@ -22,8 +11,6 @@ def export():
     yield_df = pd.read_csv("../data/yield_data.csv")
     season = pd.read_csv("../data/season_features.csv")
     merged = weekly.merge(yield_df[["plot_id", "stress_level_true"]], on="plot_id")
-
-    # 1. NDVI/NDRE trajectories per plot
     ndvi_traj = {}
     for pid, g in merged.sort_values("week").groupby("plot_id"):
         ndvi_traj[pid] = {
@@ -33,10 +20,8 @@ def export():
             "ndre": [round(v, 4) for v in g["NDRE"].tolist()],
         }
 
-    # 2. rule-based counts
     rb_counts = {str(k): int(v) for k, v in weekly["stress_rule_based"].value_counts().sort_index().items()}
 
-    # 3. ML classifier - rerun to get live metrics + importances
     weekly_feat = pd.read_csv("../data/weekly_features.csv")
     clf, acc, report, cm, importances = run_ml_classifier(weekly_feat)
     from sklearn.metrics import precision_recall_fscore_support
@@ -63,8 +48,6 @@ def export():
         "confusion_matrix": cm.tolist(),
         "importances": {k: round(float(v), 4) for k, v in importances.head(6).items()},
     }
-
-    # 4. Yield model - rerun to get live results + importances
     yield_results, best_name, yield_importances, _ = run_yield_model()
     yield_results_out = {
         name: {k: round(float(v), 4) for k, v in metrics.items()}
@@ -72,11 +55,9 @@ def export():
     }
     yield_importances_out = {k: round(float(v), 4) for k, v in yield_importances.head(10).items()}
 
-    # 5. scatter data for yield chart
     scatter = season[["plot_id", "NDVI_mean", "yield_tonnes_per_ha", "soil_moisture_mean",
                        "stress_level_true"]].round(4).to_dict(orient="records")
 
-    # 6. advisories
     latest = weekly.sort_values("week").groupby("plot_id").tail(1).copy()
     latest["advisory"] = latest.apply(generate_advisory, axis=1)
     adv_records = latest[["plot_id", "week", "NDVI", "NDRE", "soil_moisture_pct", "temp_C",
